@@ -5,10 +5,14 @@
 function find_marker(r::Robot)
     num_steps_max=10
     side=Nord
+    num_step_turn=1
     while ismarker(r)==false
-        for _ in 1:2
+        for _ in 1:11
             find_marker(r,side,num_steps_max)
-            side=next(side)
+            if ismarker(r)==false
+            move!(r,Ost)
+            side=inverse(side)
+            end
         end
     end
 end
@@ -21,5 +25,7 @@ function find_marker(r::Robot,side::HorizonSide,num_steps_max::Int)
         move!(r,side)
     end
 end
+inverse(side::HorizonSide)=HorizonSide(mod(Int(side)+2,4))
 
-next(side::HorizonSide)=HorizonSide(mod(Int(side)+3,4))
+
+    
