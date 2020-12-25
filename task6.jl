@@ -5,65 +5,122 @@
 =#
 
 function mark_innerrectangle_perimetr!(r::Robot)
-    num_steps=fill(0,3) # - вектор-столбец из 3-х нулей
-    for (i,side) in enumerate((Sud,West,Sud))
-        num_steps[i]=moves!(r,side)
-    end
-    #Переместили робота в угол
-
-    side = find_border!(r,Ost,side)
-    #УТВ: Робот - у западной границы внутренней перегородки
-
-    mark_innerrectangle_perimetr!(r,side)
-    #УТВ: Робот - снова у западной границы внутренней прямоугольной перегородки
-
-    moves!(r,Sud)
-    moves!(r,West)
-    #УТВ: Робот - в Юго-западном улу внешней рамки
-
-    for (i,side) in enumerate((Nord,Ost,Nord))
-        moves!(r,side, num_steps[i])
-    end
-    #УТВ: Робот - в исходном положении
-end
-
-function mark_innerrectangle_perimetr!(r::Robot, side::HorizonSide)
-    direction_of_movement, direction_to_border = get_directions(side)
-    for i ∈ 1:4   
-        putmarkers!(r, direction_of_movement[i], direction_to_border[i]) 
-    end
-end
-
-function find_border!(r::Robot, direction_to_border::HorizonSide, direction_of_movement::HorizonSide)
-    while isborder(r,direction_to_border)==false  
-        if isborder(r,direction_of_movement)==false
-            move!(r,direction_of_movement)
-        else
-            move!(r,direction_to_border)
-            direction_of_movement=inverse(direction_of_movement)
-        end
-    end
-    #УТВ: непосредственно справа от Робота - внутренняя пергородка
-end
-
-function putmarkers!(r::Robot, side::HorizonSide)
+    side=Sud
+    side_to_border=Ost
+    side_of_movement=Nord
+    num_vert=0
+    num_hor=0
+    num_vert_1=0
+    num_hor_1=0
     while isborder(r,side)==false
         move!(r,side)
+        num_vert=num_vert + 1
+    end
+    side=next_move(side)
+    while isborder(r,side)==false
+        move!(r,side)
+        num_hor=num_hor + 1
+    end
+    side=Sud
+    while isborder(r,side)==false
+        move!(r,side)
+        num_vert_1=num_vert_1 + 1
+    end
+    side=next_move(side)
+    while isborder(r,side)==false
+        move!(r,side)
+        num_hor_1=num_hor_1 + 1
+    end 
+    #Робот перемещается в угол запоминая путь
+    find_border!(r,side_to_border,side_of_movement)
+    #Поиск перегородки 
+    mark_perimetr!(r,side_to_border,side_of_movement)
+    #Маркировка перегородки
+    side=West
+    while isborder(r,side)==false
+        move!(r,side)
+    end
+    side=next_move(side)
+    while isborder(r,side)==false
+        move!(r,side)
+    end
+    side=Sud
+    while isborder(r,side)==false
+        move!(r,side)
+    end
+    side=next_move(side)
+    while isborder(r,side)==false
+        move!(r,side)
+    end 
+    #Робот снова в углу 
+    side=Ost
+    movements!(r,side,num_hor_1) 
+    side=Nord
+    movements!(r,side,num_vert_1)
+    side=Ost
+    movements!(r,side,num_hor) 
+    side=Nord
+    movements!(r,side,num_vert) 
+    #Перемещение робота по запомненному пути 
+    
+   
+end
+
+function find_border!(r::Robot,side_to_border::HorizonSide, side_of_movement::HorizonSide) 
+    while isborder(r,side_to_border)==false  
+        if isborder(r,side_of_movement)==false
+            move!(r,side_of_movement)
+        else
+            move!(r,side_to_border)
+            side_of_movement=inverse(side_of_movement)
+        end
+    end
+end
+
+function find_corner!(r::Robot,side::HorizonSide) 
+    num_vert=0
+    num_hor=0
+    num_vert_1=0
+    num_hor_1=0
+    while isborder(r,side)==false
+        move!(r,side)
+    end
+    side=next_move(side)
+    while isborder(r,side)==false
+        move!(r,side)
+    end
+    side=Sud
+    while isborder(r,side)==false
+        move!(r,side)
+    end
+    side=next_move(side)
+    while isborder(r,side)==false
+        move!(r,side)
+    end 
+end
+
+function mark_perimetr!(r::Robot,side_to_border::HorizonSide, side_of_movement::HorizonSide) 
+    for i ∈ 1:4   
+        while isborder(r,side_to_border)==true
+            putmarker!(r)
+            move!(r,side_of_movement)
+        end
+        side_to_border=next_bord(side_to_border)
+        side_of_movement=next_move(side_of_movement)
         putmarker!(r)
+        movements!(r,side_of_movement,1)
+        i=i+1
     end
 end
 
 inverse(side::HorizonSide)=HorizonSide(mod(Int(side)+2,4))
 
-moves!(r::Robot,side::HorizonSide)=
-    while isborder(r,side)==false
+next_bord(side_to_border::HorizonSide)=HorizonSide(mod(Int(side_to_border)+3,4))
+        
+next_move(side_of_movement::HorizonSide)=HorizonSide(mod(Int(side_of_movement)+3,4))
+
+movements!(r::Robot,side::HorizonSide,num_vert::Int)=
+    for i in 1:num_vert
         move!(r,side)
     end
 
-get_directions(side::HorizonSide) = 
-    if side == Nord  
-    # - обход будет по часовой стрелке      
-        return (Nord,Ost,Sud, West), (Ost,Sud,West,Nord)
-    else # - обход будет против часовой стрелки
-        return (Sud,Ost,Nord,West), (Ost,Nord,West,Sud) 
-    end

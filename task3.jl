@@ -31,11 +31,11 @@ inverse(side::HorizonSide)=HorizonSide(mod(Int(side)+2,4))
 
 
 
-movement!(r::Robot,side::HorizonSide)=
-    while isborder(r,side)==false
+
+movements!(r::Robot,side::HorizonSide,num_hor::Int)=
+    for i in 1:num_hor
         move!(r,side)
     end
-
 
 
 
